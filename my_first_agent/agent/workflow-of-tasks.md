@@ -8,15 +8,15 @@ This workflow supports the system goal defined in `my_first_agent/README.md`.
 
 ### 1.2 Workflow Trigger
 
-[Describe the event, request, schedule, or condition that starts the workflow.]
+The workflow will start when someone from CPVC makes a request to the participants that have already given their information to see an update of their attendance for the event.
 
 ### 1.3 Completion Condition at Runtime
 
-[Describe how the system knows, on any given run, that this workflow is completed.]
+HackTrack needs to give CPVC an estimation of the amount of people that will be attending the event.
 
 ### 1.4 General Workflow
 
-[Describe the overall sequence of tasks in one or two paragraphs. Explain the normal path first, followed by the most important exception paths and human-review points.]
+HackTrack reviews the initial registration information. It will look at all the information that was given and look at the previous attendance rate to give an estimate of how many people will actually show up. Then that is when someone at CPVC will review what the system gave and make changes if needed. Once it's reviewed and approved HackTrack will then give the final estimate and CPVC will be able to better prepare for the event.
 
 ### 1.5 Workflow Diagram
 
@@ -24,10 +24,14 @@ This workflow supports the system goal defined in `my_first_agent/README.md`.
 
 ```mermaid
 flowchart TD
-    T1["T1: First task"] --> T2["T2: Second task"]
-    T2 --> D1{"Decision condition?"}
-    D1 -->|Yes| T3["T3: Next task"]
-    D1 -->|No| H1["Human review"]
-    H1 --> T3
-    T3 --> C1([C1: Completion state])
+   S["Workflow trigger: CPVC requests an attendance update from participants who already gave information"] --> T1["T1: Review initial registration information"]
+    T1 --> T2["T2: Review attendance-update information"]
+    T2 --> T3["T3: Review previous attendance rate"]
+    T3 --> T4["T4: Estimate event attendance"]
+    T4 --> H1["H1: CPVC reviews the estimated attendance"]
+    H1 --> D1{"D1: Does CPVC approve the estimate?"}
+    D1 -->|Yes| T5["T5: Give CPVC the final attendance estimate"]
+    D1 -->|No| T6["T6: Make changes to the estimate"]
+    T6 --> H1
+    T5 --> C1["C1: Completion state: CPVC receives an estimate of event attendance"]
 ```
