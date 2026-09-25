@@ -11,11 +11,11 @@ task_name: "Review missing, late, incomplete, or conflicting resposnses"
 task_owner: "CPVC"
 
 # Agent Inference Configuration
-Provider: [e.g., Groq, OpenAI, Claude, Google Gemini]
-Model: "[Exact supported API model ID.]"
-Role: [permitted subtasks the model supports]
-Maximum inference requests per task run: "[Whole-number limit.]"
-On inference failure or exhausted limits: Record the unresolved status and hand the case to [human role].
+Provider: Groq
+Model: "[Exact supported Groq API model ID.]"
+Role: Review missing, late, incomplete, or conflicting attendee responses and summarize the information for CPVC without changing attendee information.
+Maximum inference requests per task run: 6
+On inference failure or exhausted limits: Record the unresolved status and hand the case to CPVC.
 ```
 
 ## 1. Task Goal
@@ -39,26 +39,37 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 
 ## 3. Tool Permissions and Boundaries
 
-*Name each planned tool and specify its permitted use. Use verb-object names, such as `retrieve_records`, usually matching the task or permitted subtask it supports. Tool name identifies the capability; tool type identifies the proposed implementation. No scripts or working integrations are required.*
-
 ### Task-Wide Limits
 
-- **Total task timeout:** [Maximum elapsed time for one task run, with units; include tool calls, retries, and waiting.]
-- **Maximum tool calls:** [Maximum total calls across all tools during one task run; retries count toward this total.]
+- **Total task timeout:** 120 seconds for one task run, including tool calls, retries, reasoning, and waiting.
+- **Maximum tool calls:** 6 calls across all tools during one task run; retries count toward this total.
 
 ### Tool 1
 
-- **Tool name:** [Proposed verb-object name, used consistently throughout the project.]
-- **Tool type:** [For example: Python script, pretrained model, API request, database query, or language-model call.]
-- **Supports these permitted subtasks:** [Names from Section 4.]
-- **Allowed use:** [What the tool may read, create, change, or send; identify permitted data sources and destinations.]
-- **Prohibited use:** [Actions, data, or destinations outside this tool's authority.]
-- **Approval required:** [What requires approval, who provides it, and when. Write "None within the allowed use" if applicable.]
-- **Timeout per call:** [Maximum duration of a single attempt, with units.]
-- **Maximum retries per call:** [Nonnegative whole number of additional attempts after the first; 0 means no retries.]
-- **Retry conditions and failure response:** [When a retry is allowed, any waiting interval, and what happens on timeout or exhausted retries. For actions that change state, avoid duplicate actions and hand off if the outcome is uncertain.]
+- **Tool name:** retrieve_attendee_information
+- **Input:** Attendee responses and registration information.
+- **Output:** Relevant attendee response and registration information needed to identify missing, late, incomplete, or conflicting responses.
+- **Implementation Route:** Database queries.
+- **Integration approach:** Direct integration.
+- **Role in this task:** Support reviewing missing, late, incomplete, or conflicting attendee responses by retrieving the needed attendee responses and registration information.
+- **Task timeout:** Each call may take at most 5 seconds or the remaining task time, whichever is shorter.
+- **Maximum retries:** 1
+- **Retry only when:** A temporary access or retrieval error prevents the information from being retrieved. Retry once only if enough task time and tool calls remain.
+- **On timeout, exhausted retries, or an error that cannot be retried:** Record the unresolved issue and hand the case to CPVC. Do not assume or change attendee information.
 
-*Copy the Tool block as needed. Tool-specific and task-wide limits both apply; stop at whichever is reached first. Naming a tool does not authorize uses outside its stated permissions.*
+### Tool 2
+
+- **Tool name:** compare_attendee_responses
+- **Input:** Attendee responses and registration information.
+- **Output:** Responses identified as missing, late, incomplete, or conflicting, with the supporting attendee and registration information.
+- **Implementation Route:** Functions/scripts.
+- **Integration approach:** Direct integration.
+- **Role in this task:** Support checking for missing, late, incomplete, or conflicting responses and summarizing the findings for CPVC.
+- **Task timeout:** Each call may take at most 5 seconds or the remaining task time, whichever is shorter.
+- **Maximum retries:** 0
+- **Retry only when:** Not applicable.
+- **On timeout, exhausted retries, or an error that cannot be retried:** Record the unresolved issue and hand the case to CPVC. Do not decide which information is correct and do not change attendee information.
+
 
 ## 4. How the Agent Should Reason
 
