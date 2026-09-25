@@ -21,13 +21,13 @@ HackTrack will gather the responses until the due date. Those that are missing, 
 
 After the due date for responses the system will look at all the registration information, attancdance update, and will also look at the previous attendance rate to create an estimate for those who will attend. 
 
-Then CPVC will inspect the estimate. If CPVC approves it the estimate given will be finalized. If it is not accepted CPVC will give explanation and the system will give estimates until CPVC finally approves it.  
+Then CPVC will inspect the estimate. If CPVC approves it the estimate is final and  If it is not accepted by CPVC, CPVC will give an explanation or a correction and HackTrack will give estimates until finally approved. 
 
 ### 1.5 Workflow Diagram
 
 ```mermaid
 flowchart TD
-    S["Workflow trigger: CPVC requests an estimate of event attendance"] --> T1["T1: Review registration information"]
+   S["Workflow trigger: CPVC requests an estimate of event attendance"] --> T1["T1: Review registration information"]
     T1 --> T2["T2: Send attendance update requests to registered individuals"]
     T2 --> T3["T3: Gather attendee responses until the due date"]
     T3 --> D1{"D1: Has the response due date passed?"}
@@ -37,12 +37,12 @@ flowchart TD
     D2 -->|No| T5["T5: Review all registration information"]
     T4 --> T5
     T5 --> T6["T6: Review attendance updates"]
-    T6 --> T7["T7: Review the previous attendance rate"]
-    T7 --> T8["T8: Create an attendance estimate"]
-    T8 --> H1["H1: CPVC inspects the attendance estimate"]
+    T6 --> T7["T7: Review the previous attendance-to-registration rate"]
+    T7 --> T8["T8: Create an attendee estimate"]
+    T8 --> H1["H1: CPVC inspects the attendee estimate"]
     H1 --> D3{"D3: Does CPVC approve the estimate?"}
-    D3 -->|Yes| T9["T9: Finalize the attendance estimate"]
-    D3 -->|No| T10["T10: Provide an explanation for the estimate"]
+    D3 -->|Yes| T9["T9: Finalize the attendee estimate"]
+    D3 -->|No| T10["T10: Provide an explanation or correction"]
     T10 --> T8
-    T9 --> C1["C1: Completion state: HackTrack has gathered available attendee updates, reviewed missing, late, incomplete, or conflicting responses, created an attendance estimate, and CPVC has approved the final estimate"]
+    T9 --> C1["C1: Completion state: HackTrack has gathered available attendee updates, reviewed missing, late, incomplete, or conflicting responses, created an attendee estimate, and CPVC has approved the final estimate"]
 ```
