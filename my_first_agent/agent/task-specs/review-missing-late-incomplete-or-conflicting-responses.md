@@ -1,4 +1,4 @@
-# [Exact task name] Task Specification
+# review-missing-late-incomplete-or-conflicting-responses Task Specification
 
 *BUS 4498 Team Build Milestone 1. Create one copy for each L3 task. Save it in `our_team_agent/agent/task-specs/` in `BUS4498_Team_Build`. Use the task name in lowercase with hyphens between words; replace `&` with `and` and remove other punctuation.*
 
@@ -6,9 +6,9 @@
 
 ```yaml
 # BASIC INFORMATION
-task_id: "[Exact workflow task ID]"
-task_name: "[Exact workflow task name]"
-task_owner: "[Person or role accountable for this task]"
+task_id: "3"
+task_name: "Review missing, late, incomplete, or conflicting resposnses"
+task_owner: "CPVC"
 
 # Agent Inference Configuration
 Provider: [e.g., Groq, OpenAI, Claude, Google Gemini]
@@ -20,17 +20,22 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 
 ## 1. Task Goal
 
-- **Objective:** [What business result should this task produce?]
+- **Objective:** Review missing, late, incomplete, or conflicting responses so CPVC can recognize which responses they should look further into or correct. 
 
 ## 2. Inbound Inputs
 
-*Describe what the enclosing workflow must provide. Specify the structure of each input; do not invent customer, employee, or event data. Copy the Input block as needed.*
+
 
 ### Input 1
 
-- **Input name:** [Short name.]
-- **What it contains:** [Information the agent receives, including required fields and format.]
-- **Source:** [Task ID and name, person, or other permitted source.]
+- **Input name:** Attendee responses
+- **What it contains:** The attende that are avaible with updates and responses 
+- **Source:** Attendees
+### Input 2
+
+- **Input name:** Registration information
+- **What it contains:** The attendee registration information is useful to see if the responses are missing, late, incomplete, or conflicting 
+- **Source:** Registration system  
 
 ## 3. Tool Permissions and Boundaries
 
@@ -57,33 +62,48 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 
 ## 4. How the Agent Should Reason
 
-*Define permitted kinds of work rather than a fixed sequence. The agent selects its next subtask using intermediate findings and may skip, repeat, or combine permitted subtasks within Section 3's limits. Individual subtasks do not all have to be L3. Copy the Permitted Subtask block as needed.*
 
 ### Permitted Subtask 1
 
-- **Subtask name:** [Use a verb-object name.]
-- **Subtask description:** [What information does it examine and what finding or intermediate result does it produce?]
-- **Subtask boundary:** [What may and may not be done, including prerequisites and required approval?]
-- **Retry limits:** [Maximum additional attempts after the initial attempt; 0 means no retries. Repetition must also stay within Section 3's limits.]
+- **Subtask name:** Check missing responses 
+- **Subtask description:** Compare the registration information with the attendee responses  to idenitfy who has a missing repsonse.
+- **Subtask boundary:** May only identify missing responses. May not change information of attendee or create a response. 
+- **Retry limits:** 0
+### Permitted Subtask 2
+
+- **Subtask name:** Check late responses 
+- **Subtask description:** Review attendee responses to identify which responses were submitted after the deadline. 
+- **Subtask boundary:** May only identify late responses. May not change what CPVC does about the response or change the deadline. 
+- **Retry limits:** 0
+### Permitted Subtask 3
+
+- **Subtask name:** Check incomplete responses 
+- **Subtask description:** Review the attendee responses to identify which responses are missing information. 
+- **Subtask boundary:** May only identify incomplete responses. May not add information that is missing for the attendee. 
+- **Retry limits:** 0
+### Permitted Subtask 4
+
+- **Subtask name:** Check conflicting responses 
+- **Subtask description:** Compare attendee responses with registration information to identify information that is inconsistent. 
+- **Subtask boundary:** May only identify conflicting responses. May not determine which information is correct or make changes to the attendees information. 
+- **Retry limits:** 0
 
 - **Decision guidance:** After each subtask, use its findings to select the permitted subtask most likely to resolve the most important remaining uncertainty. Do not follow a fixed sequence. If no permitted subtask can make useful progress, stop and hand the case to a person.
 
 ## 5. When to Stop or Hand Off to a Human
 
-- **Stop successfully when:** [What evidence shows that the required result is complete and acceptable? Confidence alone is not enough.]
-- **Hand off early when:** [What missing evidence, lack of progress, failure, or out-of-scope finding requires human review?]
-- **Hand off to:** [Specific person, role, or review queue.]
+- **Stop successfully when:** All attendee responses have been reviewed and any missing, late, incomplete, or conflicting responses have been recognized. 
+- **Hand off early when:** The information that is given is not clear, conflicting information is not able to be solved, or there isn't enough information to continue reviewing the response. 
+- **Hand off to:** CPVC
 
 Stop at the first applicable budget limit or handoff condition. While awaiting review, take no further autonomous action.
 
 ## 6. Outbound Deliverable
 
-*Revise these default items if your task needs a more specific deliverable, or retain them if they fit.*
-
 - **Status:** Completed or escalated to human.
-- **Result or recommendation:** The completed result. If escalated before reaching a supported result, write undetermined.
-- **Evidence summary:** The most important evidence supporting the result or explaining why no result could be reached.
+- **Result or recommendation:** List the attendee responses that are identifed as missing,  late, incomplete, or conflicting. 
+- **Evidence summary:** Summarize the attendee responses and registration information that led to each finding. 
 - **Subtasks performed:** Permitted subtasks completed, including repeated attempts.
 - **Unresolved issues:** Remaining uncertainties or questions; use none only if no unresolved issue remains.
 - **Handoff note:** Reason for stopping, unresolved questions, and what the reviewer needs to decide; write "Not applicable" for a completed task.
-- **Next task or recipient:** Who receives the completed output? Unresolved cases go to the handoff recipient above.
+- **Next task or recipient:** CPVC
