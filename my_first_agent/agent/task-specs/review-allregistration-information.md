@@ -29,7 +29,7 @@ The system gets and organizes the registration information needed to create the 
 
 - **Output name:** Reviewed registration information
 - **Contents and format:** Available registration information organized for the the attendance estimate.
-- **Next task or recipient:** T8 — Create an attendee estimate
+- **Next task or recipient:** T8
 - **Complete when:** The available registration information has been retcovered and ready to be used in the estimate.
 
 
