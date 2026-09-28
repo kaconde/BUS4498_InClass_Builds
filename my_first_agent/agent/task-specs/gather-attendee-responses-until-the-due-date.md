@@ -18,7 +18,7 @@ The system collects attendance responses until the due date and saves them for r
 
 - **Input name:** Attendance update requests
 - **Contents and format:** Records of the attendance update requests sent to registered individuals.
-- **Source:** T2 — Send attendance update requests to those registered individuals
+- **Source:** T2 
 
 ### Input 2
 
@@ -34,7 +34,7 @@ The system collects attendance responses until the due date and saves them for r
 
 - **Output name:** Collected attendee responses
 - **Contents and format:** Available attendance update responses and their submission information.
-- **Next task or recipient:** T4 — Review missing, late, incomplete, or conflicting responses
+- **Next task or recipient:** T4 
 - **Complete when:** The response deadline has passed and all current responses up to then have been collected.
 
 
