@@ -30,7 +30,7 @@ The system gets the previous attendance rate to help estimate current event atte
 
 - **Output name:** Previous attendance to registration rate
 - **Contents and format:** The  attendance toregistration rate prepared for use in the estimate.
-- **Next task or recipient:** T8 — Create an attendee estimate
+- **Next task or recipient:** T8 
 - **Complete when:** The previous rate has been successfully retrieved or calculated. 
 
 
