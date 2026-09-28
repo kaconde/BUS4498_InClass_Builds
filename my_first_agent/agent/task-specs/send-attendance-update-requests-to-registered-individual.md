@@ -19,7 +19,7 @@ The system sends an attendance update request to each registered attendee using 
 
 - **Input name:** Reviewed registration information
 - **Contents and format:** Registration records to those individuals who should get an attendance update request.
-- **Source:** T1 — Review registration information
+- **Source:** T1 
 
 - **If a required input is missing or invalid:** Record the issue and send to CPVC. Do not send a request when the required attendee information is missing.
 
@@ -29,7 +29,7 @@ The system sends an attendance update request to each registered attendee using 
 
 - **Output name:** Attendance update requests
 - **Contents and format:** The attendance update requests that were sent and also the record of each request 
-- **Next task or recipient:** T3 — Gather attendee responses until the deadline
+- **Next task or recipient:** T3
 - **Complete when:** The required attendance update requests have been sent and the send status has been recorded.
 
 
