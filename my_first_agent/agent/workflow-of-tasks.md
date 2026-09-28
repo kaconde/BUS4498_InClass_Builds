@@ -4,7 +4,7 @@
 
 ## 1. Workflow Overview
 ### 1.1 Workflow Goal
-HackTrack will support CPVC with estimating the amount of people that will be attending using registration information and having a attendee update.This system will allow CPVC to get a better estimate instead of just relying on the previous attendance-to-registration rate that was around 40% baseline. The system will do this without overstepping attendees privacy. 
+HackTrack will support CPVC with estimating the amount of people that will be attending using registration information and having a attendee update.This system will allow CPVC to get a better estimate instead of just relying on the previous attendance-to-registration rate that was around 40% baseline. The target is to create the closest attdance estimate usiing the information of the attendee. The system will do this without overstepping attendees privacy. 
 
 ### 1.2 Workflow Trigger
 
