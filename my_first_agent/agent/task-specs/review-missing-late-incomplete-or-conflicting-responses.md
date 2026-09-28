@@ -34,7 +34,7 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 ### Input 2
 
 - **Input name:** Registration information
-- **What it contains:** The attendee registration information is useful to see if the responses are missing, late, incomplete, or conflicting 
+- **What it contains:** The attendee registration information and the response due date is useful to help idenitfy if the responses are missing, late, incomplete, or conflicting 
 - **Source:** Registration system  
 
 ## 3. Tool Permissions and Boundaries
@@ -51,11 +51,11 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 - **Output:** Relevant attendee response and registration information needed to identify missing, late, incomplete, or conflicting responses.
 - **Implementation Route:** Database queries.
 - **Integration approach:** Direct integration.
-- **Role in this task:** Support reviewing missing, late, incomplete, or conflicting attendee responses by retrieving the needed attendee responses and registration information.
-- **Task timeout:** Each call may take at most 5 seconds or the remaining task time, whichever is shorter.
+- **Role in this task:** Assist by reviewing missing, late, incomplete, or conflicting attendee responses by recovering the needed attendee responses and registration information.
+- **Task timeout:** Each call may take at most 5 seconds or the remaining task time, which ever one is shorter.
 - **Maximum retries:** 1
-- **Retry only when:** A temporary access or retrieval error prevents the information from being retrieved. Retry once only if enough task time and tool calls remain.
-- **On timeout, exhausted retries, or an error that cannot be retried:** Record the unresolved issue and hand the case to CPVC. Do not assume or change attendee information.
+- **Retry only when:** There is a temporary problem trying to get information. Retry once only if there is enough time and tool calls left.
+- **On timeout, exhausted retries, or an error that cannot be retried:** Record the issue and send the case to CPVC. Do not guess or change any information of the attendee. 
 
 ### Tool 2
 
@@ -64,11 +64,11 @@ On inference failure or exhausted limits: Record the unresolved status and hand 
 - **Output:** Responses identified as missing, late, incomplete, or conflicting, with the supporting attendee and registration information.
 - **Implementation Route:** Functions/scripts.
 - **Integration approach:** Direct integration.
-- **Role in this task:** Support checking for missing, late, incomplete, or conflicting responses and summarizing the findings for CPVC.
-- **Task timeout:** Each call may take at most 5 seconds or the remaining task time, whichever is shorter.
+- **Role in this task:** Assist by checking for missing, late, incomplete, or conflicting responses and summarizing the findings for CPVC.
+- **Task timeout:** Each call may take at most 5 seconds or the remaining task time, which ever one is shorter.
 - **Maximum retries:** 0
 - **Retry only when:** Not applicable.
-- **On timeout, exhausted retries, or an error that cannot be retried:** Record the unresolved issue and hand the case to CPVC. Do not decide which information is correct and do not change attendee information.
+- **On timeout, exhausted retries, or an error that cannot be retried:** Record the issue and send the case to CPVC. Do not pick which information is correct or change any information of the attendee. 
 
 
 ## 4. How the Agent Should Reason
