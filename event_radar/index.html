@@ -35,6 +35,10 @@
         </label>
         <textarea id="announcement" name="announcement" maxlength="2000" required placeholder="Board Game Guild: Game Night! Thursday, October 29, 7 to 10 pm in the University Union, Room 220..."></textarea>
         <p id="char-count" class="muted" aria-live="polite">0 / 2000</p>
+        <label for="flyer">
+          Flyer photo <span class="hint">Optional JPG or PNG, up to 5 MB. Posts with photos wait for review.</span>
+        </label>
+        <input id="flyer" name="flyer" type="file" accept="image/jpeg,image/png">
         <button id="submit-button" type="submit">Post event</button>
       </form>
       <div id="post-result" class="result" hidden aria-live="polite" aria-atomic="true"></div>

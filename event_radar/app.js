@@ -4,10 +4,11 @@
   const config = window.EVENT_RADAR_CONFIG || {};
   const supabaseUrl = String(config.supabaseUrl || "").replace(/\/$/, "");
   const publishableKey = String(config.publishableKey || "");
-  const fields = "id, created_at, status, title, club, event_date, start_time, end_time, place_name, place_detail, cost, free_food, summary";
+  const fields = "id, created_at, status, title, club, event_date, start_time, end_time, place_name, place_detail, cost, free_food, summary, flyer_url";
 
   const form = document.querySelector("#post-form");
   const announcement = document.querySelector("#announcement");
+  const flyer = document.querySelector("#flyer");
   const charCount = document.querySelector("#char-count");
   const submitButton = document.querySelector("#submit-button");
   const result = document.querySelector("#post-result");
@@ -19,6 +20,7 @@
   let client = null;
   let events = [];
   let foodOnly = false;
+  const maxFlyerBytes = 5 * 1024 * 1024;
 
   function setText(element, value) {
     element.textContent = value == null ? "" : String(value);
@@ -70,6 +72,11 @@
     if (!date) return start ? `Date to be announced · ${start}${end ? ` to ${end}` : ""}` : "Date and time to be announced";
     if (!start) return `${date} · Time to be announced`;
     return `${date} · ${start}${end ? ` to ${end}` : ""}`;
+  }
+
+  function isAllowedFlyerUrl(value) {
+    const baseUrl = `${supabaseUrl}/storage/v1/object/public/flyers/`;
+    return typeof value === "string" && value.startsWith(baseUrl);
   }
 
   function setResult(status, message, reasons) {
@@ -164,6 +171,15 @@
     if (tags.childElementCount) body.append(tags);
     item.append(body);
 
+    if (isAllowedFlyerUrl(event.flyer_url)) {
+      const image = document.createElement("img");
+      image.className = "flyer";
+      image.src = event.flyer_url;
+      image.alt = `${event.title || "Event"} flyer`;
+      image.loading = "lazy";
+      item.append(image);
+    }
+
     return item;
   }
 
@@ -215,6 +231,12 @@
     event.preventDefault();
     if (!supabaseUrl || !publishableKey) {
       setResult("error", "The site is missing its Supabase settings.", []);
+      return;
+    }
+
+    const selectedFlyer = flyer.files && flyer.files[0];
+    if (selectedFlyer && (selectedFlyer.size > maxFlyerBytes || !["image/jpeg", "image/png"].includes(selectedFlyer.type))) {
+      setResult("error", "The flyer must be a JPG or PNG no larger than 5 MB.", []);
       return;
     }
 
