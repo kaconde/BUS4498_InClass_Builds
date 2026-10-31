@@ -115,6 +115,10 @@ type EventCard = {
 type ParsedRequest = {
   announcement: string;
   flyer: File | null;
+  source: string;
+  sourceId: string;
+  sourceName: string;
+  thread: string[];
 };
 
 type FlyerInput = {
@@ -152,6 +156,16 @@ function uniqueStrings(values: unknown): string[] {
 
 function stringValue(value: unknown): string {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function threadStrings(value: unknown): string[] {
+  if (typeof value === "string") return value.trim() ? [value.trim()] : [];
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .slice(-4);
 }
 
 function normalizeCard(value: unknown): EventCard {
@@ -268,6 +282,9 @@ function responseEvent(row: Record<string, unknown>): Record<string, unknown> {
     flyer_url: row.flyer_url,
     rule_flags: row.rule_flags,
     note_for_moderator: row.note_for_moderator,
+    source: row.source,
+    source_id: row.source_id,
+    source_name: row.source_name,
   };
 }
 
@@ -275,15 +292,36 @@ async function readAnnouncement(request: Request): Promise<ParsedRequest> {
   const contentType = request.headers.get("content-type") ?? "";
   if (contentType.includes("application/json")) {
     const body = await request.json() as Record<string, unknown>;
-    return { announcement: stringValue(body.announcement), flyer: null };
+    return {
+      announcement: stringValue(body.announcement),
+      flyer: null,
+      source: stringValue(body.source),
+      sourceId: stringValue(body.source_id),
+      sourceName: stringValue(body.source_name),
+      thread: threadStrings(body.thread),
+    };
   }
   if (contentType.includes("multipart/form-data") || contentType.includes("application/x-www-form-urlencoded")) {
     const form = await request.formData();
     const flyerValue = form.get("flyer");
     const flyer = flyerValue instanceof File && flyerValue.size > 0 ? flyerValue : null;
-    return { announcement: stringValue(form.get("announcement")), flyer };
+    return {
+      announcement: stringValue(form.get("announcement")),
+      flyer,
+      source: "",
+      sourceId: "",
+      sourceName: "",
+      thread: [],
+    };
   }
-  return { announcement: (await request.text()).trim(), flyer: null };
+  return {
+    announcement: (await request.text()).trim(),
+    flyer: null,
+    source: "",
+    sourceId: "",
+    sourceName: "",
+    thread: [],
+  };
 }
 
 function buildSystemPrompt(today: string, hasFlyer: boolean): string {
@@ -414,6 +452,9 @@ async function main(request: Request): Promise<Response> {
 
   const announcement = parsedRequest.announcement;
   const flyer = parsedRequest.flyer;
+  const source = parsedRequest.source;
+  const sourceId = parsedRequest.sourceId;
+  const sourceName = parsedRequest.sourceName;
   const length = Array.from(announcement).length;
   if (length < 1 || length > 2000) {
     return jsonResponse({ ok: false, message: "Please enter an announcement from 1 to 2000 characters." }, 400);
@@ -423,6 +464,29 @@ async function main(request: Request): Promise<Response> {
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  if (source && sourceId) {
+    const { data: alreadyRead, error: readError } = await admin
+      .from("events")
+      .select("id")
+      .eq("source", source)
+      .eq("source_id", sourceId)
+      .maybeSingle();
+    if (readError) {
+      console.error("Could not check whether the chat message was already read", readError.message);
+      return jsonResponse({ ok: false, message: "The chat message could not be checked right now." }, 500);
+    }
+    if (alreadyRead) {
+      return jsonResponse({
+        ok: true,
+        status: "duplicate",
+        already_read: true,
+        message: "This chat message was already read.",
+        reasons: [],
+        event: null,
+      });
+    }
+  }
+
   const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count, error: countError } = await admin
     .from("events")
@@ -453,6 +517,42 @@ async function main(request: Request): Promise<Response> {
 
   if (!card.is_event) {
     const reason = card.not_event_reason || "This post is not an event students can attend.";
+    if (source && sourceId) {
+      const { data: rejectedEvent, error: rejectedError } = await admin
+        .from("events")
+        .insert({
+          status: "rejected",
+          status_reason: reason,
+          announcement,
+          ai_model: model,
+          source,
+          source_id: sourceId,
+          source_name: sourceName,
+        })
+        .select("*")
+        .single();
+      if (rejectedError) {
+        if (rejectedError.code === "23505") {
+          return jsonResponse({
+            ok: true,
+            status: "duplicate",
+            already_read: true,
+            message: "This chat message was already read.",
+            reasons: [],
+            event: null,
+          });
+        }
+        console.error("Could not save rejected chat message", rejectedError.message);
+        return jsonResponse({ ok: false, message: "The chat message could not be saved right now." }, 500);
+      }
+      return jsonResponse({
+        ok: true,
+        status: "rejected",
+        message: "This does not look like an event, so it was not posted.",
+        reasons: [reason],
+        event: responseEvent(rejectedEvent as Record<string, unknown>),
+      });
+    }
     return jsonResponse({
       ok: true,
       status: "rejected",
@@ -515,11 +615,24 @@ async function main(request: Request): Promise<Response> {
     dedupe_key: dedupeKey,
     ai_model: model,
     flyer_url: "",
+    source,
+    source_id: sourceId,
+    source_name: sourceName,
   };
 
   const { data, error: insertError } = await admin.from("events").insert(row).select("*").single();
   if (insertError) {
     if (insertError.code === "23505") {
+      if (source && sourceId) {
+        return jsonResponse({
+          ok: true,
+          status: "duplicate",
+          already_read: true,
+          message: "This chat message was already read.",
+          reasons: [],
+          event: null,
+        });
+      }
       return jsonResponse({
         ok: true,
         status: "duplicate",
