@@ -45,6 +45,12 @@
   function today() { var t = new Date(); return new Date(t.getFullYear(), t.getMonth(), t.getDate()); }
   function isThisWeek(d) { if (!d) return false; var diff = (parseDate(d) - today()) / 86400000; return diff >= 0 && diff < 7; }
   function isRecent(iso) { return iso && (Date.now() - Date.parse(iso)) < 5 * 60 * 1000; }
+  function redactPrivateText(value) {
+    return String(value || "")
+      .replace(/(?:\+?1[\s.-]?)?(?:\(?\d{3}\)?[\s.-])\d{3}[\s.-]\d{4}\b/g, "[personal phone removed]")
+      .replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, "[personal email removed]")
+      .replace(/\b(?:venmo|cash\s*app|zelle)\b\s*(?:handle|username|:)?\s*[@$]?[A-Z0-9._-]+/gi, "[payment handle removed]");
+  }
   var toastTimer = null;
   function toast(msg) {
     var t = $("toast"); t.textContent = msg; t.className = "toast show";
@@ -198,6 +204,9 @@
       data.reasons.forEach(function (r) { ul.appendChild(el("li", null, r)); });
       box.appendChild(ul);
     }
+    if (data.ms != null) {
+      box.appendChild(el("p", "result-meta", "Run: " + data.ms + " ms · " + (data.usage && data.usage.model || "") + " · " + ((data.usage && data.usage.input_tokens) || 0) + " input / " + ((data.usage && data.usage.output_tokens) || 0) + " output tokens"));
+    }
     if (data.event && data.status !== "rejected") box.appendChild(card(data.event));
     var looked = memo(data.looked_at);
     if (looked) box.appendChild(looked);
@@ -244,6 +253,7 @@
       $("modWho").textContent = session.user.email;
       loadWaiting();
       loadLessons();
+      loadPermissions();
     }
   }
   function review(ev, status) {
@@ -276,7 +286,7 @@
         res.data.forEach(function (ev) {
           var box = el("div", "review");
           if (ev.status_reason) box.appendChild(el("p", "why", "Why it's waiting: " + ev.status_reason));
-          box.appendChild(el("p", "original", "Original post: " + ev.announcement));
+          box.appendChild(el("p", "original", "Original post: " + redactPrivateText(ev.announcement)));
           var looked = memo(ev.agent_notes);
           if (looked) box.appendChild(looked);
           // Teach the agent while the post is fresh: the lesson is saved with the decision.
@@ -323,18 +333,6 @@
   $("signOutBtn").addEventListener("click", function () { db.auth.signOut(); });
   db.auth.onAuthStateChange(function (_event, s) { session = s; renderMod(); });
   db.auth.getSession().then(function (res) { session = res.data.session; renderMod(); });
-
-  // Tools: clear the board. Every post goes; the club list and the lessons stay.
-  $("clearBtn").addEventListener("click", function () {
-    if (!window.confirm("Delete every post on the board? This can't be undone. The club list and the lessons stay.")) return;
-    $("toolsMsg").textContent = "Clearing…";
-    db.from("events").delete().not("id", "is", null).then(function (res) {
-      if (res.error) { $("toolsMsg").textContent = "Couldn't clear the board: " + res.error.message; return; }
-      $("toolsMsg").textContent = "The board is empty.";
-      toast("Board cleared");
-      loadWaiting(); loadBoard(true);
-    });
-  });
 
   /* ---------- lessons: what moderators teach the agent ---------- */
   function saveLesson(text, fromPost) {
@@ -385,6 +383,66 @@
     if (!text) return;
     saveLesson(text, null).then(function () { $("lessonText").value = ""; });
   });
+
+  /* ---------- permissions: switches and limits the agent reads on every post ---------- */
+  function permissionValueText(p) {
+    return p.kind === "switch" ? (p.value ? "On" : "Off") : String(p.value);
+  }
+  function loadPermissions() {
+    $("permissionsStatus").textContent = "Loading…";
+    db.from("agent_permissions").select("key, label, kind, value, reason, changed_by, updated_at, sort").order("sort", { ascending: true })
+      .then(function (res) {
+        var list = $("permissionsList");
+        list.textContent = "";
+        if (res.error) { $("permissionsStatus").textContent = "Couldn't load permissions: " + res.error.message; return; }
+        res.data.forEach(function (p) {
+          var li = el("li", "permission");
+          var head = el("div", "permission-head");
+          head.appendChild(el("div", "permission-title", p.label));
+          head.appendChild(el("span", "permission-value", permissionValueText(p)));
+          li.appendChild(head);
+          var form = el("form", "permission-form");
+          var valueBox;
+          if (p.kind === "switch") {
+            var sw = el("label", "switch");
+            valueBox = el("input"); valueBox.type = "checkbox"; valueBox.checked = p.value === true;
+            valueBox.setAttribute("aria-label", p.label);
+            sw.appendChild(valueBox); sw.appendChild(el("span", "knob"));
+            form.appendChild(sw);
+          } else {
+            valueBox = el("input"); valueBox.type = "number"; valueBox.min = "0"; valueBox.step = "1"; valueBox.value = String(p.value);
+            valueBox.setAttribute("aria-label", p.label);
+            form.appendChild(valueBox);
+          }
+          var reason = el("input");
+          reason.type = "text"; reason.required = true; reason.maxLength = 500;
+          reason.placeholder = "Reason for this change (required)";
+          form.appendChild(reason);
+          var save = el("button", "small", "Save"); save.type = "submit";
+          form.appendChild(save);
+          form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var why = reason.value.trim();
+            if (!why) { reason.focus(); $("permissionsStatus").textContent = "Type a reason before saving a permission change."; return; }
+            var value = p.kind === "switch" ? valueBox.checked : Math.max(0, Math.floor(Number(valueBox.value)));
+            if (p.kind === "number" && !Number.isFinite(value)) { valueBox.focus(); return; }
+            save.disabled = true;
+            db.from("agent_permissions").update({ value: value, reason: why, changed_by: session.user.email, updated_at: new Date().toISOString() }).eq("key", p.key)
+              .then(function (r) {
+                save.disabled = false;
+                if (r.error) { $("permissionsStatus").textContent = "Couldn't save that permission: " + r.error.message; return; }
+                toast("Permission saved");
+                loadPermissions();
+              });
+          });
+          li.appendChild(form);
+          li.appendChild(el("p", "permission-meta", "Last changed by " + (p.changed_by || "builder") + " · " + (p.updated_at ? new Date(p.updated_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : "unknown")));
+          li.appendChild(el("p", "permission-reason", p.reason || "No reason recorded."));
+          list.appendChild(li);
+        });
+        $("permissionsStatus").textContent = res.data.length + " permission" + (res.data.length === 1 ? "" : "s") + ". The agent reads them before every post.";
+      });
+  }
 
   loadBoard(false);
 })();
